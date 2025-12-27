@@ -34,6 +34,7 @@ async function run() {
       const dat = new Date();
       data.createdAT = dat;
       console.log(data);
+      console.log(data);
 
       const result = await petservices.insertOne(data);
       res.send(result);
@@ -60,6 +61,7 @@ async function run() {
       const query = { email: email };
       const result = await petservices.find(query).toArray();
       res.send(result);
+      
     });
     // data update api
     app.put("/update/:id", async (req, res) => {
