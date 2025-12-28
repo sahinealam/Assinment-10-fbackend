@@ -34,7 +34,6 @@ async function run() {
       const dat = new Date();
       data.createdAT = dat;
       console.log(data);
-      console.log(data);
 
       const result = await petservices.insertOne(data);
       res.send(result);
@@ -61,7 +60,6 @@ async function run() {
       const query = { email: email };
       const result = await petservices.find(query).toArray();
       res.send(result);
-      
     });
     // data update api
     app.put("/update/:id", async (req, res) => {
@@ -75,11 +73,24 @@ async function run() {
       res.send(result);
     });
 
+    // api for delete data
+
+    app.delete("/delete/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const query = { _id: new ObjectId(id) };
+      const result = await petservices.deleteOne(query);
+
+      res.send(result);
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
   } finally {
+
+    //  all off / commit
     // await client.close();
   }
 }
