@@ -100,6 +100,13 @@ async function run() {
 
       
     });
+
+    // oder get api creat
+     app.get("/orders", async (req,res)=>{
+      const result = await orderCollection.find().toArray();
+      res.status(200).send(result)
+     })
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
