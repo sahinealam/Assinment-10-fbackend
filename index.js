@@ -1,19 +1,18 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-
-// Mongodb setup
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const e = require("cors");
-const port = 3000;
+
 const app = express();
+const port = 3000;
+
 app.use(cors());
 app.use(express.json());
 
+// MongoDB connection
 const uri =
   "mongodb+srv://assingment-10:HalyVFSXXlVxFL9O@cluster0.qmqsv1k.mongodb.net/?appName=Cluster0";
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -25,103 +24,140 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     await client.connect();
-
     const database = client.db("petservice");
-    const petservices = database.collection("services");
-    const orderCollection = database.collection("orders");
-    // post api service  add data-base
+    const servicesCollection = database.collection("services");
+    const ordersCollection = database.collection("orders");
+
+    // ----------------- ROUTES -----------------
+
+    // Add a new service
     app.post("/services", async (req, res) => {
-      const data = req.body;
-      const dat = new Date();
-      data.createdAT = dat;
-      // console.log(data);
+      try {
+        const data = req.body;
+        data.createdAt = new Date();
 
-      const result = await petservices.insertOne(data);
-      res.send(result);
-    });
-    //  get services from Data-Base
-    app.get("/services", async (req, res) => {
-      const { category } = req.query;
-      // console.log(category);
-      const query = {};
-      if (category) {
-        query.category = category;
+        // make sure email is provided
+        if (!data.email) {
+          return res.status(400).json({ error: "Email is required" });
+        }
+
+        const result = await servicesCollection.insertOne(data);
+        res.status(201).json(result);
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to add service" });
       }
-      const result = await petservices.find(query).toArray();
-      res.send(result);
     });
 
-    // get single service by id
+    // Get all services (latest 6 or by category)
+    app.get("/services", async (req, res) => {
+      try {
+        const { category } = req.query;
+        const query = {};
+        if (category) query.category = category;
 
+        const services = await servicesCollection
+          .find(query)
+          .sort({ createdAt: -1 })
+          .limit(6)
+          .toArray();
+
+        res.json(services);
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to fetch services" });
+      }
+    });
+
+    // Get single service by ID
     app.get("/services/:id", async (req, res) => {
-      const id = req.params;
-      // console.log(id);
-      const query = { _id: new ObjectId(id) };
-      const result = await petservices.findOne(query);
-      res.send(result);
+      try {
+        const id = req.params.id;
+        const service = await servicesCollection.findOne({
+          _id: new ObjectId(id),
+        });
+        res.json(service);
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to fetch service" });
+      }
     });
-    // my services by data
+
+    // Get services by user email
     app.get("/my-services", async (req, res) => {
-      const { email } = req.query;
+      try {
+        const { email } = req.query;
+        if (!email) return res.status(400).json({ error: "Email required" });
 
-      const query = { email: email };
-      const result = await petservices.find(query).toArray();
-      res.send(result);
-    });
-    // data update api
-    app.put("/update/:id", async (req, res) => {
-      const data = req.body;
-      const id = req.params;
-      const query = { _id: new ObjectId(id) };
-      const updateServices = {
-        $set: data,
-      };
-      const result = await petservices.updateOne(query, updateServices);
-      res.send(result);
+        const services = await servicesCollection.find({ email }).toArray();
+        res.json(services);
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to fetch services" });
+      }
     });
 
-    // api for delete data
-
+    // Delete a service
     app.delete("/delete/:id", async (req, res) => {
-      const id = req.params.id;
-
-      const query = { _id: new ObjectId(id) };
-      const result = await petservices.deleteOne(query);
-
-      res.send(result);
+      try {
+        const id = req.params.id;
+        const result = await servicesCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+        if (result.deletedCount === 0)
+          return res.status(404).json({ error: "Service not found" });
+        res.json({ message: "Service deleted" });
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to delete service" });
+      }
     });
 
-    //  oder post api creat
+    // Update a service
+    app.put("/update-service/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const updateData = req.body;
+
+        const result = await servicesCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updateData }
+        );
+
+        if (result.matchedCount === 0)
+          return res.status(404).json({ error: "Service not found" });
+        res.json({ message: "Service updated" });
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to update service" });
+      }
+    });
+
+    // Orders
     app.post("/orders", async (req, res) => {
       const data = req.body;
-      console.log(data);
-      const result = await orderCollection.insertOne(data);
-      res.status(201).send(result)
-
-      
+      const result = await ordersCollection.insertOne(data);
+      res.status(201).json(result);
     });
 
-    // oder get api creat
-     app.get("/orders", async (req,res)=>{
-      const result = await orderCollection.find().toArray();
-      res.status(200).send(result)
-     })
+    app.get("/orders", async (req, res) => {
+      const orders = await ordersCollection.find().toArray();
+      res.json(orders);
+    });
 
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // Test route
+    app.get("/", (req, res) => {
+      res.send("Backend is running!");
+    });
+
+    console.log("Connected to MongoDB");
   } finally {
-    //  all off / commit
-    // await client.close();
+    // Don't close client during dev
   }
 }
+
 run().catch(console.dir);
 
-app.get("/", (req, res) => {
-  res.send("assingment-10");
-});
-
 app.listen(port, () => {
-  console.log(`service is running on port ${port}`);
+  console.log(`Server running on http://localhost:${port}`);
 });
