@@ -28,7 +28,7 @@ async function run() {
     const servicesCollection = database.collection("services");
     const ordersCollection = database.collection("orders");
 
-    // ----------------- ROUTES -----------------
+    
 
     // Add a new service
     app.post("/services", async (req, res) => {
@@ -145,6 +145,8 @@ async function run() {
       res.json(orders);
     });
 
+
+
     // Test route
     app.get("/", (req, res) => {
       res.send("Backend is running!");
@@ -161,3 +163,5 @@ run().catch(console.dir);
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
+
+
