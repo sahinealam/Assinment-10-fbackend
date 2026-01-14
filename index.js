@@ -28,8 +28,6 @@ async function run() {
     const servicesCollection = database.collection("services");
     const ordersCollection = database.collection("orders");
 
-    
-
     // Add a new service
     app.post("/services", async (req, res) => {
       try {
@@ -83,7 +81,7 @@ async function run() {
       }
     });
 
-    // Get services by user email
+    // Get  my-services by user email
     app.get("/my-services", async (req, res) => {
       try {
         const { email } = req.query;
@@ -133,19 +131,25 @@ async function run() {
       }
     });
 
-    // Orders
+    // myoders post Orders
     app.post("/orders", async (req, res) => {
       const data = req.body;
       const result = await ordersCollection.insertOne(data);
       res.status(201).json(result);
     });
 
+    // my orders get
     app.get("/orders", async (req, res) => {
-      const orders = await ordersCollection.find().toArray();
-      res.json(orders);
+      try {
+        const { email } = req.query;
+        const query = email ? { buyerEmail: email } : {}; // ← use buyerEmail from DB
+        const orders = await ordersCollection.find(query).toArray();
+        res.json(orders);
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to fetch orders" });
+      }
     });
-
-
 
     // Test route
     app.get("/", (req, res) => {
@@ -163,5 +167,3 @@ run().catch(console.dir);
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
-
-
