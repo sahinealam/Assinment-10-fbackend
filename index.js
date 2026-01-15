@@ -67,6 +67,25 @@ async function run() {
       }
     });
 
+    // Get all services (for /allservices page)
+    app.get("/allservices", async (req, res) => {
+      try {
+        const { category } = req.query;
+        const query = {};
+        if (category) query.category = category;
+
+        const services = await servicesCollection
+          .find(query)
+          .sort({ createdAt: -1 })
+          .toArray();
+
+        res.json(services);
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to fetch all services" });
+      }
+    });
+
     // Get single service by ID
     app.get("/services/:id", async (req, res) => {
       try {
