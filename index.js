@@ -11,7 +11,7 @@ app.use(express.json());
 
 // MongoDB connection
 const uri =
-  "mongodb+srv://assingment-10:HalyVFSXXlVxFL9O@cluster0.qmqsv1k.mongodb.net/?appName=Cluster0";
+  `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.qmqsv1k.mongodb.net/?appName=Cluster0`;
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -23,7 +23,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
     const database = client.db("petservice");
     const servicesCollection = database.collection("services");
     const ordersCollection = database.collection("orders");
